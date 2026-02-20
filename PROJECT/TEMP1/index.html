@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Happy Rose Day | My Love</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Dancing+Script:wght@400;700&family=Inter:wght@300;400;600&family=Rubik+Bubbles&family=Caveat:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --rose-dark: #be185d;
+        }
+
+        body, html {
+            height: 100%;
+            width: 100%;
+            margin: 0;
+            padding: 0;
+            font-family: 'Inter', sans-serif;
+            background-image: url('bg.webp');
+            background-position: center;
+            background-repeat: no-repeat;
+            background-size: cover; 
+            overflow: hidden; /* FORCE NO SCROLL */
+        }
+
+        body {
+            background-color: #fffaf0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .serif-font { font-family: 'Playfair Display', serif; }
+        .script-font { font-family: 'Dancing Script', cursive; }
+        .bubble-font { font-family: 'Rubik Bubbles', cursive; letter-spacing: 0.02em; }
+        .hand-font { font-family: 'Caveat', cursive; }
+
+        .float-text {
+            text-shadow: 0 2px 4px rgba(255, 255, 255, 0.9), 0 0 30px rgba(255, 255, 255, 0.8);
+        }
+
+        /* --- New Premium Glass Button --- */
+        .btn-glass {
+            /* Solid enough to be readable, glassy enough to be cool */
+            background: rgba(225, 29, 72, 0.85); /* Rose-600 with slight transparency */
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            box-shadow: 
+                0 4px 6px -1px rgba(0, 0, 0, 0.1), 
+                0 2px 4px -1px rgba(0, 0, 0, 0.06),
+                inset 0 1px 0 rgba(255, 255, 255, 0.3); /* Inner highlight */
+            color: white;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+        }
+
+        .btn-glass:hover {
+            background: rgba(225, 29, 72, 0.95);
+            transform: translateY(-2px) scale(1.02);
+            box-shadow: 
+                0 10px 15px -3px rgba(190, 24, 93, 0.4), 
+                0 4px 6px -2px rgba(190, 24, 93, 0.2),
+                inset 0 1px 0 rgba(255, 255, 255, 0.4);
+        }
+
+        .btn-glass:active {
+            transform: translateY(1px);
+        }
+
+        /* Falling Petals */
+        .petal {
+            position: fixed;
+            top: -10%;
+            user-select: none;
+            pointer-events: none;
+            z-index: 50;
+            animation: fall linear infinite;
+        }
+
+        @keyframes fall {
+            0% { transform: translateY(0) rotate(0deg) translateX(0); opacity: 1; }
+            100% { transform: translateY(110vh) rotate(360deg) translateX(20px); opacity: 0; }
+        }
+
+        .floating {
+            animation: floating 4s ease-in-out infinite;
+        }
+
+        @keyframes floating {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-15px); }
+        }
+
+        /* Section Visibility */
+        .page-section {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex; /* Flex to center content vertically */
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.6s ease-in-out;
+            padding: 1rem;
+            box-sizing: border-box;
+        }
+
+        .page-section.active {
+            opacity: 1;
+            pointer-events: all;
+            z-index: 10;
+        }
+
+        /* --- Gallery Styles --- */
+        .photo-card {
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            opacity: 0;
+            transform: scale(0.8) translateY(20px);
+            position: relative;
+            background: white;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+        
+        .photo-card.visible {
+            opacity: 1;
+            transform: scale(1) translateY(0) rotate(var(--rotation));
+        }
+
+        .photo-card:hover {
+            transform: scale(1.15) rotate(0deg) !important;
+            z-index: 50;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2);
+        }
+
+        .tape {
+            position: absolute;
+            top: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 60px;
+            height: 20px;
+            background-color: rgba(255, 255, 255, 0.4);
+            backdrop-filter: blur(2px);
+            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+            z-index: 10;
+            opacity: 0.9;
+        }
+
+        /* --- Rose Game Styles --- */
+        .mystery-rose {
+            cursor: pointer;
+            transition: transform 0.3s ease;
+            filter: drop-shadow(0 10px 15px rgba(190, 24, 93, 0.2));
+        }
+        .mystery-rose:hover {
+            transform: scale(1.15) rotate(5deg);
+        }
+        .shake {
+            animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both;
+        }
+        @keyframes shake {
+            10%, 90% { transform: translate3d(-1px, 0, 0); }
+            20%, 80% { transform: translate3d(2px, 0, 0); }
+            30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
+            40%, 60% { transform: translate3d(4px, 0, 0); }
+        }
+
+        /* Background Blobs */
+        @keyframes blob {
+            0% { transform: translate(0px, 0px) scale(1); }
+            33% { transform: translate(30px, -50px) scale(1.1); }
+            66% { transform: translate(-20px, 20px) scale(0.9); }
+            100% { transform: translate(0px, 0px) scale(1); }
+        }
+        .animate-blob {
+            animation: blob 7s infinite;
+        }
+        .animation-delay-2000 { animation-delay: 2s; }
+        .animation-delay-4000 { animation-delay: 4s; }
+
+        /* --- Mobile Top Bar (iOS Glass) --- */
+        .mobile-top-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 48px;
+            background: rgba(255, 250, 240, 0.6);
+            backdrop-filter: blur(20px) saturate(180%);
+            -webkit-backdrop-filter: blur(20px) saturate(180%);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 100; /* Above petals */
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02);
+        }
+        
+        .mobile-top-bar span {
+            font-family: 'Playfair Display', serif;
+            font-weight: 700;
+            font-style: italic;
+            color: #be185d; /* Rose-700 */
+            font-size: 1.1rem;
+            letter-spacing: 0.05em;
+            text-shadow: 0 1px 2px rgba(255, 255, 255, 0.8);
+        }
+
+        /* --- Demo Popup --- */
+        #demo-popup {
+            transition: opacity 0.3s ease-in-out;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Demo Version Popup -->
+    <div id="demo-popup" class="fixed inset-0 z-[200] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+        <div class="bg-white/90 rounded-2xl p-6 md:p-8 max-w-md w-full text-center shadow-2xl border border-rose-200">
+            <h3 class="font-bold text-2xl text-rose-600 mb-2 font-serif">Demo Version</h3>
+            <p class="text-gray-700 mb-6 font-medium">
+                This is a demo version only created by <span class="font-bold text-gray-900">coder.him</span>.<br>
+                Contact him to get the full version.
+            </p>
+            <a href="https://www.instagram.com/coder.him/" target="_blank" class="block mb-8 text-rose-500 font-bold text-xl hover:scale-105 transition-transform">
+                <span class="inline-block mr-1">📸</span> @coder.him
+            </a>
+            <button onclick="closePopup()" class="w-full bg-gradient-to-r from-rose-500 to-rose-600 hover:from-rose-600 hover:to-rose-700 text-white font-bold py-3 px-8 rounded-xl transition-all shadow-lg hover:shadow-rose-500/30 transform hover:-translate-y-1">
+                Continue to Site
+            </button>
+        </div>
+    </div>
+
+    <!-- Mobile Top Bar -->
+    <div class="mobile-top-bar md:hidden">
+        <span>for xyz</span>
+    </div>
+
+    <!-- Background Music -->
+    <audio id="bgMusic" src="msc.mp3" loop></audio>
+
+    <div id="petals-container"></div>
+
+    <!-- PAGE 1: Landing Section (100vh Fits) -->
+    <div id="landing-page" class="page-section active">
+        
+        <!-- Rose Image - Scales with height (Reduced for desktop) -->
+        <div class="mb-2 md:mb-2 h-[25vh] md:h-[28vh] flex items-center justify-center">
+            <div class="h-full aspect-square flex items-center justify-center floating">
+                <img src="rose.png" alt="Rose" class="h-full w-full object-contain drop-shadow-2xl filter brightness-110" onerror="this.src='https://media.tenor.com/images/a74b76a0279d67562688463836171926/tenor.gif';">
+            </div>
+        </div>
+
+        <div class="space-y-2 float-text mb-4 text-center">
+            <p class="script-font text-3xl md:text-3xl lg:text-4xl text-rose-600 mb-0">My Dearest,</p>
+            
+            <!-- Giant Text (Reduced desktop sizes) -->
+            <h1 class="bubble-font text-5xl md:text-6xl lg:text-8xl text-rose-600 leading-none drop-shadow-xl tracking-wide py-2">
+                You Are My <br><span class="text-rose-500">Everything</span>
+            </h1>
+
+            <div class="flex items-center justify-center gap-4 py-2">
+                <div class="h-1 w-16 md:w-24 bg-rose-400 rounded-full"></div>
+                <p class="text-rose-600 uppercase tracking-[0.2em] text-xs md:text-sm font-bold">Happy Rose Day</p>
+                <div class="h-1 w-16 md:w-24 bg-rose-400 rounded-full"></div>
+            </div>
+        </div>
+
+        <!-- Paragraph - Clamped Width (Reduced font size) -->
+        <p class="hand-font text-rose-800 text-xl md:text-2xl font-medium max-w-2xl text-center leading-tight float-text mb-8 px-4">
+            Every petal tells a story of our journey together. Today, I give you my heart wrapped in the beauty of a thousand roses.
+        </p>
+
+        <div>
+            <button onclick="goToGallery()" class="btn-glass py-3 px-10 md:py-3 md:px-12 rounded-full flex items-center gap-2 text-lg md:text-xl font-bold tracking-wide">
+                Enter My Heart <span class="text-2xl">♥</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- PAGE 2: Gallery Section -->
+    <div id="gallery-page" class="page-section">
+        
+        <!-- Background Blobs confined to this section -->
+        <div class="absolute inset-0 overflow-hidden -z-10 pointer-events-none">
+            <div class="absolute top-10 left-10 w-72 h-72 bg-rose-200 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob"></div>
+            <div class="absolute top-10 right-10 w-72 h-72 bg-purple-200 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob animation-delay-2000"></div>
+            <div class="absolute bottom-10 left-20 w-72 h-72 bg-pink-200 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob animation-delay-4000"></div>
+        </div>
+
+        <!-- Container (Reduced Width for desktop) -->
+        <div class="bg-white/40 backdrop-blur-xl rounded-[2rem] p-4 md:p-8 shadow-[0_8px_32px_0_rgba(255,100,100,0.15)] border border-white/60 w-full max-w-4xl max-h-[95vh] flex flex-col justify-center items-center">
+            
+            <!-- Header (Reduced desktop size) -->
+            <h2 class="script-font text-4xl md:text-5xl text-rose-700 text-center mb-2 md:mb-4 drop-shadow-sm flex-shrink-0">
+                Our Love Moments
+            </h2>
+
+            <!-- Grid - Optimized: 2 columns on Mobile, 3 on Desktop (Reduced desktop card width) -->
+            <div class="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-5 w-full h-auto justify-items-center mb-4 md:mb-6 overflow-y-auto md:overflow-visible p-2">
+                
+                <!-- Image 1 -->
+                <div class="photo-card p-2 pb-6 rounded bg-white shadow-md w-full max-w-[130px] md:max-w-[170px]" style="--rotation: -2deg;">
+                    <div class="tape"></div> 
+                    <div class="aspect-[4/5] overflow-hidden rounded-sm bg-gray-50">
+                        <img src="img1.png" onerror="this.src='https://images.unsplash.com/photo-1516589178581-6cd7833ae3b2?w=400'" class="w-full h-full object-cover">
+                    </div>
+                    <p class="hand-font text-rose-900 text-sm md:text-base text-center mt-2 -mb-4 font-bold">First Date</p>
+                </div>
+
+                <!-- Image 2 -->
+                <div class="photo-card p-2 pb-6 rounded bg-white shadow-md w-full max-w-[130px] md:max-w-[170px]" style="--rotation: 2deg;">
+                    <div class="tape"></div>
+                    <div class="aspect-[4/5] overflow-hidden rounded-sm bg-gray-50">
+                        <img src="img2.png" onerror="this.src='https://images.unsplash.com/photo-1529333166437-7750a6dd5a70?w=400'" class="w-full h-full object-cover">
+                    </div>
+                    <p class="hand-font text-rose-900 text-sm md:text-base text-center mt-2 -mb-4 font-bold">Selfies</p>
+                </div>
+
+                <!-- Image 3 -->
+                <div class="photo-card p-2 pb-6 rounded bg-white shadow-md w-full max-w-[130px] md:max-w-[170px]" style="--rotation: -1deg;">
+                    <div class="tape"></div>
+                    <div class="aspect-[4/5] overflow-hidden rounded-sm bg-gray-50">
+                        <img src="img3.png" onerror="this.src='https://images.unsplash.com/photo-1621600411688-4be93cd68504?w=400'" class="w-full h-full object-cover">
+                    </div>
+                    <p class="hand-font text-rose-900 text-sm md:text-base text-center mt-2 -mb-4 font-bold">Hands</p>
+                </div>
+
+                <!-- Image 4 -->
+                <div class="photo-card p-2 pb-6 rounded bg-white shadow-md w-full max-w-[130px] md:max-w-[170px]" style="--rotation: 1deg;">
+                    <div class="tape"></div>
+                    <div class="aspect-[4/5] overflow-hidden rounded-sm bg-gray-50">
+                        <img src="img4.png" onerror="this.src='https://images.unsplash.com/photo-1518199266791-5375a83190b7?w=400'" class="w-full h-full object-cover">
+                    </div>
+                    <p class="hand-font text-rose-900 text-sm md:text-base text-center mt-2 -mb-4 font-bold">Smile</p>
+                </div>
+
+                <!-- Image 5 -->
+                <div class="photo-card p-2 pb-6 rounded bg-white shadow-md w-full max-w-[130px] md:max-w-[170px]" style="--rotation: -2deg;">
+                    <div class="tape"></div>
+                    <div class="aspect-[4/5] overflow-hidden rounded-sm bg-gray-50">
+                        <img src="img5.png" onerror="this.src='https://images.unsplash.com/photo-1523438885200-e635ba2c371e?w=400'" class="w-full h-full object-cover">
+                    </div>
+                    <p class="hand-font text-rose-900 text-sm md:text-base text-center mt-2 -mb-4 font-bold">Trips</p>
+                </div>
+
+                <!-- Image 6 -->
+                <div class="photo-card p-2 pb-6 rounded bg-white shadow-md w-full max-w-[130px] md:max-w-[170px]" style="--rotation: 1.5deg;">
+                    <div class="tape"></div>
+                    <div class="aspect-[4/5] overflow-hidden rounded-sm bg-gray-50">
+                        <img src="img6.png" onerror="this.src='https://images.unsplash.com/photo-1494774157365-9e04c6720e47?w=400'" class="w-full h-full object-cover">
+                    </div>
+                    <p class="hand-font text-rose-900 text-sm md:text-base text-center mt-2 -mb-4 font-bold">Us</p>
+                </div>
+            </div>
+
+            <div class="text-center flex-shrink-0">
+                <button onclick="goToRoseSelection()" class="btn-glass py-3 px-10 rounded-full text-lg md:text-xl font-bold tracking-wide">
+                    🎁 Pick a Gift 🎁
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- PAGE 3: Rose Selection Game -->
+    <div id="rose-game-page" class="page-section">
+        <div class="bg-white/70 backdrop-blur-xl rounded-[2rem] p-8 md:p-12 shadow-2xl border border-white text-center w-full max-w-xl">
+            <h2 class="script-font text-4xl md:text-5xl text-rose-600 mb-4">Pick the Right Rose</h2>
+            <p class="text-gray-600 mb-8 font-light text-lg md:text-xl">Only one rose holds the key to my heart...</p>
+            
+            <div class="flex justify-center items-center gap-4 md:gap-8 mb-8" id="roses-container">
+                <div class="mystery-rose text-7xl md:text-8xl transition-transform" onclick="checkRose(0)">🌹</div>
+                <div class="mystery-rose text-7xl md:text-8xl transition-transform" onclick="checkRose(1)">🌹</div>
+                <div class="mystery-rose text-7xl md:text-8xl transition-transform" onclick="checkRose(2)">🌹</div>
+            </div>
+
+            <div id="game-message" class="h-8 text-rose-600 font-bold hand-font text-2xl md:text-3xl transition-all"></div>
+        </div>
+    </div>
+
+    <!-- PAGE 4: Final Gift Page -->
+    <div id="final-gift-page" class="page-section">
+        <div class="bg-pink-100/60 backdrop-blur-xl rounded-[2.5rem] p-8 md:p-12 shadow-[0_25px_50px_-12px_rgba(255,182,193,0.5)] border border-white/80 relative overflow-hidden text-center ring-1 ring-white/50 w-full max-w-sm">
+            
+            <h2 class="script-font text-5xl md:text-6xl text-rose-700 mb-6 drop-shadow-sm font-bold">I Love You</h2>
+            
+            <!-- White Square for Image -->
+            <div class="bg-white rounded-[1.5rem] p-4 shadow-xl mb-6 mx-auto w-40 h-40 md:w-40 md:h-40 flex items-center justify-center transform rotate-1">
+                <img src="dudu.webp" 
+                     alt="Cute Gift" 
+                     class="w-full h-full object-contain"
+                     onerror="this.src='https://cdn-icons-png.flaticon.com/512/4258/4258223.png'"> 
+            </div>
+
+            <p class="font-medium text-gray-700 text-base md:text-lg leading-relaxed mb-8 font-sans tracking-wide">
+                Thank you for being my constant bloom. <br>
+                Wishing you a day as beautiful as your smile.
+            </p>
+
+            <button onclick="location.reload()" class="btn-glass py-3 px-8 rounded-full text-sm md:text-base font-bold uppercase tracking-widest">
+                Happy Rose Day Once Again
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // Music Logic
+        const music = document.getElementById('bgMusic');
+
+        // Play music trigger (attached to Popup close and Page interactions)
+        function playMusic() {
+            if (music.paused) {
+                music.play().catch(e => console.log("Auto-play blocked, waiting for click."));
+            }
+        }
+
+        // Popup Logic
+        function closePopup() {
+            const popup = document.getElementById('demo-popup');
+            popup.style.opacity = '0';
+            setTimeout(() => {
+                popup.style.display = 'none';
+            }, 300); // Wait for transition
+            
+            // Interaction here allows music to start
+            playMusic();
+        }
+
+        // Navigation Logic
+        function switchPage(fromId, toId) {
+            const fromEl = document.getElementById(fromId);
+            const toEl = document.getElementById(toId);
+            
+            fromEl.classList.remove('active');
+            toEl.classList.add('active');
+        }
+
+        function goToGallery() {
+            // Try playing music on first interaction if autoplay failed
+            playMusic();
+            
+            switchPage('landing-page', 'gallery-page');
+            
+            // Stagger photos animation
+            setTimeout(() => {
+                const photoCards = document.querySelectorAll('.photo-card');
+                photoCards.forEach((card, index) => {
+                    setTimeout(() => {
+                        card.classList.add('visible');
+                    }, 100 * (index + 1));
+                });
+            }, 300);
+        }
+
+        function goToRoseSelection() {
+            switchPage('gallery-page', 'rose-game-page');
+            initRoseGame();
+        }
+
+        // Rose Game Logic
+        let correctRoseIndex = 0;
+        let isGameActive = true;
+
+        function initRoseGame() {
+            correctRoseIndex = Math.floor(Math.random() * 3);
+            isGameActive = true;
+            document.getElementById('game-message').innerText = "";
+            document.querySelectorAll('.mystery-rose').forEach(r => r.style.transform = '');
+        }
+
+        function checkRose(index) {
+            if (!isGameActive) return;
+
+            const messageEl = document.getElementById('game-message');
+            const roses = document.querySelectorAll('.mystery-rose');
+            const selectedRose = roses[index];
+
+            if (index === correctRoseIndex) {
+                isGameActive = false;
+                messageEl.innerText = "You found my heart! 💖";
+                
+                confetti({
+                    particleCount: 200,
+                    spread: 80,
+                    origin: { y: 0.6 },
+                    colors: ['#ff0000', '#ff69b4', '#ffffff', '#e11d48']
+                });
+
+                setTimeout(() => {
+                    switchPage('rose-game-page', 'final-gift-page');
+                }, 1500);
+
+            } else {
+                const messages = ["Oops! Not this one 🙈", "Try again! 🌹", "My heart is elsewhere 💔"];
+                messageEl.innerText = messages[Math.floor(Math.random() * messages.length)];
+                
+                selectedRose.classList.add('shake');
+                setTimeout(() => selectedRose.classList.remove('shake'), 500);
+            }
+        }
+
+        // Ambient Effects
+        function createPetal() {
+            const container = document.getElementById('petals-container');
+            if (!container) return;
+            
+            const petal = document.createElement('div');
+            petal.className = 'petal';
+            const shapes = ['🌹', '🌸', '❤', '💗'];
+            petal.innerText = shapes[Math.floor(Math.random() * shapes.length)];
+            
+            const size = Math.random() * (24 - 14) + 14;
+            const left = Math.random() * 100;
+            const duration = Math.random() * (12 - 7) + 7;
+            
+            petal.style.fontSize = `${size}px`;
+            petal.style.left = `${left}vw`;
+            petal.style.animationDuration = `${duration}s`;
+            petal.style.opacity = Math.random() * 0.4 + 0.3;
+            
+            container.appendChild(petal);
+            setTimeout(() => petal.remove(), duration * 1000);
+        }
+
+        window.onload = function() {
+            // Note: Music autoplay here will likely be blocked by browsers until
+            // the user clicks "Continue to Site" on the popup.
+            playMusic();
+            
+            for(let i = 0; i < 20; i++) setTimeout(createPetal, Math.random() * 2000);
+            setInterval(createPetal, 1500);
+        };
+    </script>
+</body>
+</html>
